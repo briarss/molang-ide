@@ -59,8 +59,8 @@ With this, `q.` completions show only that event's query variables (e.g. `player
 ## Schema
 
 Both plugins are powered by `molang-schema.json`, a comprehensive schema defining:
-- **Structs** — pokemon, player, species, battle, etc. with all their functions
-- **Function sets** — composed registries (entityFunctions, playerFunctions, etc.)
-- **Runtimes** — 129 event contexts with specific query variables
-- **Struct compositions** — how struct types are assembled from function registries
-- **Math functions** — full trig/interpolation/utility library
+- **Structs** - pokemon, player, species, battle, etc. with all their functions
+- **Function sets** - composed registries (entityFunctions, playerFunctions, etc.)
+- **Runtimes** - 129 event contexts with specific query variables
+- **Struct compositions** - how struct types are assembled from function registries
+- **Math functions** - full trig/interpolation/utility library

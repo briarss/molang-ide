@@ -42,11 +42,9 @@ public class MoLangGotoHandler implements GotoDeclarationHandler {
         Document doc = editor.getDocument();
         String fullText = doc.getText();
 
-        // Try to resolve f.xxx() function calls
         PsiElement fnTarget = resolveFunctionCall(project, fullText, offset);
         if (fnTarget != null) return new PsiElement[]{fnTarget};
 
-        // Try to resolve import('namespace:path')
         PsiElement importTarget = resolveImport(project, fullText, offset);
         if (importTarget != null) return new PsiElement[]{importTarget};
 
@@ -55,11 +53,9 @@ public class MoLangGotoHandler implements GotoDeclarationHandler {
 
     @Nullable
     private PsiElement resolveFunctionCall(Project project, String text, int offset) {
-        // Find if the caret is within a f.xxx() call
         String fnName = findFunctionNameAtOffset(text, offset);
         if (fnName == null) return null;
 
-        // Search the function index
         FileBasedIndex index = FileBasedIndex.getInstance();
         Collection<VirtualFile> files = FileTypeIndex.getFiles(
                 MoLangFileType.INSTANCE,
@@ -83,21 +79,16 @@ public class MoLangGotoHandler implements GotoDeclarationHandler {
 
     @Nullable
     private PsiElement resolveImport(Project project, String text, int offset) {
-        // Check if caret is within an import('...') call
         String importPath = findImportPathAtOffset(text, offset);
         if (importPath == null) return null;
 
-        // Parse namespace:path
         int colonIdx = importPath.indexOf(':');
         if (colonIdx < 0) return null;
         String namespace = importPath.substring(0, colonIdx);
         String path = importPath.substring(colonIdx + 1);
 
-        // Resolve: data/{namespace}/molang/{path}.molang
-        // Search project for matching file
         String targetRelPath = "data/" + namespace + "/molang/" + path + ".molang";
 
-        // Search in project content roots
         Collection<VirtualFile> files = FileTypeIndex.getFiles(
                 MoLangFileType.INSTANCE,
                 GlobalSearchScope.projectScope(project)
@@ -116,7 +107,6 @@ public class MoLangGotoHandler implements GotoDeclarationHandler {
 
     @Nullable
     private String findFunctionNameAtOffset(String text, int offset) {
-        // Search around offset for f.xxx( pattern
         int searchStart = Math.max(0, offset - 100);
         int searchEnd = Math.min(text.length(), offset + 50);
         String region = text.substring(searchStart, searchEnd);

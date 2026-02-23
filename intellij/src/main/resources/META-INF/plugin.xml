@@ -17,7 +17,6 @@
     <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- File type -->
         <fileType
                 name="MoLang"
                 implementationClass="aster.amo.molang.ide.MoLangFileType"
@@ -25,12 +24,10 @@
                 language="MoLang"
                 extensions="molang"/>
 
-        <!-- Parser -->
         <lang.parserDefinition
                 language="MoLang"
                 implementationClass="aster.amo.molang.ide.parser.MoLangParserDefinition"/>
 
-        <!-- Syntax highlighting -->
         <lang.syntaxHighlighterFactory
                 language="MoLang"
                 implementationClass="aster.amo.molang.ide.highlight.MoLangSyntaxHighlighterFactory"/>
@@ -38,24 +35,20 @@
         <colorSettingsPage
                 implementation="aster.amo.molang.ide.highlight.MoLangColorSettingsPage"/>
 
-        <!-- Completion -->
         <completion.contributor
                 language="MoLang"
                 implementationClass="aster.amo.molang.ide.completion.MoLangCompletionContributor"/>
 
-        <!-- Documentation -->
         <lang.documentationProvider
                 language="MoLang"
                 implementationClass="aster.amo.molang.ide.documentation.MoLangDocumentationProvider"/>
 
-        <!-- Navigation -->
         <gotoDeclarationHandler
                 implementation="aster.amo.molang.ide.navigation.MoLangGotoHandler"/>
 
         <fileBasedIndex
                 implementation="aster.amo.molang.ide.navigation.MoLangFunctionIndex"/>
 
-        <!-- Schema service -->
         <projectService
                 serviceImplementation="aster.amo.molang.ide.schema.MoLangSchemaService"/>
     </extensions>

@@ -15,10 +15,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Indexes fn('name', ...) definitions across all .molang files.
- * Maps function name → list of offsets within the file.
- */
 public class MoLangFunctionIndex extends FileBasedIndexExtension<String, List<Integer>> {
     public static final ID<String, List<Integer>> NAME = ID.create("molang.function.index");
 

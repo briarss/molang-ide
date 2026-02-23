@@ -54,28 +54,16 @@ public final class MoLangSchemaService {
         return loaded;
     }
 
-    // ── Runtime contexts ──────────────────────────────────────────────
-
-    /**
-     * Get all runtime context names (e.g., "event:BATTLE_VICTORY").
-     */
     public Set<String> getRuntimeNames() {
         return runtimes != null ? runtimes.keySet() : Collections.emptySet();
     }
 
-    /**
-     * Get the runtime context object for a given event name.
-     */
     @Nullable
     public JsonObject getRuntimeContext(String eventName) {
         if (runtimes == null || !runtimes.has(eventName)) return null;
         return runtimes.getAsJsonObject(eventName);
     }
 
-    /**
-     * Get the query variables available in a runtime context.
-     * Returns a map of variable name → JsonObject with type/struct_type/description.
-     */
     @NotNull
     public Map<String, JsonObject> getRuntimeQueryVariables(String eventName) {
         JsonObject runtime = getRuntimeContext(eventName);
@@ -91,10 +79,6 @@ public final class MoLangSchemaService {
         return result;
     }
 
-    /**
-     * Try to infer the runtime context from a {@code // @context event:XXX} annotation
-     * in the first 10 lines of the document text.
-     */
     @Nullable
     public String inferRuntimeFromContent(String text) {
         if (text == null) return null;
@@ -113,19 +97,11 @@ public final class MoLangSchemaService {
         return null;
     }
 
-    /**
-     * Try to infer the runtime context from a file path.
-     * Patterns:
-     *   callbacks/{event_name_lower}/*.molang → event:EVENT_NAME_UPPER
-     *   molang/{event_name_lower}/*.molang    → event:EVENT_NAME_UPPER
-     *   Fuzzy match against any runtime name in the path
-     */
     @Nullable
     public String inferRuntimeFromPath(String filePath) {
         if (filePath == null) return null;
         String normalized = filePath.replace('\\', '/').toLowerCase();
 
-        // Try callbacks/event_name/ or molang/event_name/ pattern
         for (String prefix : new String[]{"callbacks/", "molang/"}) {
             int idx = normalized.indexOf(prefix);
             if (idx >= 0) {
@@ -141,7 +117,6 @@ public final class MoLangSchemaService {
             }
         }
 
-        // Try matching any runtime category from the path
         if (runtimes != null) {
             for (String runtimeName : runtimes.keySet()) {
                 String lower = runtimeName.replace("event:", "").toLowerCase().replace("_", "");
@@ -154,19 +129,10 @@ public final class MoLangSchemaService {
         return null;
     }
 
-    // ── Structs ───────────────────────────────────────────────────────
-
-    /**
-     * Get top-level struct names (pokemon, math, player, npc, species).
-     */
     public Set<String> getStructNames() {
         return structs != null ? structs.keySet() : Collections.emptySet();
     }
 
-    /**
-     * Get the functions available on a struct.
-     * Returns a map of function name → JsonObject with type, params, description, source.
-     */
     @NotNull
     public Map<String, JsonObject> getStructFunctions(String structName) {
         if (structs == null || !structs.has(structName)) return Collections.emptyMap();
@@ -183,11 +149,6 @@ public final class MoLangSchemaService {
         return result;
     }
 
-    // ── Struct compositions ───────────────────────────────────────────
-
-    /**
-     * Get the function set registries that compose a struct type.
-     */
     @NotNull
     public List<String> getCompositionRegistries(String structType) {
         if (structCompositions == null || !structCompositions.has(structType)) return Collections.emptyList();
@@ -200,11 +161,6 @@ public final class MoLangSchemaService {
         return registries;
     }
 
-    // ── Function sets ─────────────────────────────────────────────────
-
-    /**
-     * Get all functions from a named function set.
-     */
     @NotNull
     public Map<String, JsonObject> getFunctionSetFunctions(String setName) {
         if (functionSets == null || !functionSets.has(setName)) return Collections.emptyMap();
@@ -221,28 +177,16 @@ public final class MoLangSchemaService {
         return result;
     }
 
-    // ── Chain resolution ──────────────────────────────────────────────
-
-    /**
-     * Resolve a dot-chain like ["pokemon", "species", "identifier"]
-     * starting from a given struct type or runtime query variable.
-     *
-     * Returns a SchemaResolution with the functions available at the end of the chain,
-     * or null if resolution fails.
-     */
     @Nullable
     public SchemaResolution resolveChain(String runtimeName, String[] chain) {
         if (chain == null || chain.length == 0) return null;
 
-        // First element: look it up in runtime query vars
         Map<String, JsonObject> queryVars = getQueryVariables(runtimeName);
 
-        // Walk the chain
         JsonObject current = null;
         String currentStructType = null;
-        Map<String, JsonObject> currentFunctions = null; // for inline function nodes
+        Map<String, JsonObject> currentFunctions = null;
 
-        // Resolve first element
         String first = chain[0];
         if (queryVars.containsKey(first)) {
             current = queryVars.get(first);
@@ -256,7 +200,6 @@ public final class MoLangSchemaService {
             return null;
         }
 
-        // Walk remaining chain elements
         for (int i = 1; i < chain.length; i++) {
             Map<String, JsonObject> funcs;
             if (currentFunctions != null) {
@@ -274,18 +217,15 @@ public final class MoLangSchemaService {
             if ("Struct".equals(type)) {
                 currentStructType = getStringField(current, "struct_type");
                 if (current.has("functions")) {
-                    // Merge inline functions with composed functions from struct_type
                     currentFunctions = getInlineFunctions(current);
                 }
                 if (currentStructType == null && currentFunctions == null) return null;
             } else {
-                // Terminal value, not a struct
                 if (i < chain.length - 1) return null;
                 return new SchemaResolution(current, Collections.emptyMap());
             }
         }
 
-        // Return functions available at this point
         Map<String, JsonObject> availableFunctions;
         if (currentFunctions != null) {
             availableFunctions = currentFunctions;
@@ -297,21 +237,16 @@ public final class MoLangSchemaService {
         return new SchemaResolution(current, availableFunctions);
     }
 
-    /**
-     * Resolve a single function entry by full chain (for documentation lookup).
-     */
     @Nullable
     public JsonObject resolveFunction(String runtimeName, String[] chain) {
         if (chain == null || chain.length == 0) return null;
 
-        // For math.xxx
         if (chain.length >= 1 && "math".equals(chain[0]) && chain.length == 1) {
-            return null; // math itself
+            return null;
         }
 
         SchemaResolution res = resolveChain(runtimeName, Arrays.copyOf(chain, chain.length - 1));
         if (res == null && chain.length == 1) {
-            // Direct lookup in runtime query vars
             if (runtimeName != null) {
                 Map<String, JsonObject> queryVars = getRuntimeQueryVariables(runtimeName);
                 return queryVars.get(chain[0]);
@@ -324,41 +259,29 @@ public final class MoLangSchemaService {
         return res.functions().get(last);
     }
 
-    // ── Math functions ────────────────────────────────────────────────
-
     @NotNull
     public Map<String, JsonObject> getMathFunctions() {
         return getStructFunctions("math");
     }
-
-    // ── General functions (available everywhere) ──────────────────────
 
     @NotNull
     public Map<String, JsonObject> getGeneralFunctions() {
         return getFunctionSetFunctions("generalFunctions");
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────
-
-    /**
-     * Get all functions available on a struct type, including composed function sets.
-     */
     @NotNull
     public Map<String, JsonObject> getAllFunctionsForType(@Nullable String structType) {
         if (structType == null) return Collections.emptyMap();
 
         Map<String, JsonObject> result = new LinkedHashMap<>();
 
-        // Direct struct functions
         result.putAll(getStructFunctions(structType));
 
-        // Composed function set functions
         List<String> registries = getCompositionRegistries(structType);
         for (String registry : registries) {
             result.putAll(getFunctionSetFunctions(registry));
         }
 
-        // Custom functions from composition (e.g. vec3.x/y/z, zone.name/uuid)
         if (structCompositions != null && structCompositions.has(structType)) {
             JsonObject comp = structCompositions.getAsJsonObject(structType);
             if (comp.has("custom_functions")) {
@@ -375,17 +298,11 @@ public final class MoLangSchemaService {
         return result;
     }
 
-    /**
-     * Get all available query variables for completions.
-     * If runtime is known, uses runtime-specific variables.
-     * Otherwise, returns a merged set from all common runtimes.
-     */
     @NotNull
     public Map<String, JsonObject> getQueryVariables(@Nullable String runtimeName) {
         if (runtimeName != null) {
             return getRuntimeQueryVariables(runtimeName);
         }
-        // Merge from common runtimes to provide broad completions
         Map<String, JsonObject> merged = new LinkedHashMap<>();
         if (runtimes != null) {
             for (String key : runtimes.keySet()) {
@@ -407,7 +324,6 @@ public final class MoLangSchemaService {
             }
         }
 
-        // Also include composed functions if struct_type is set
         String structType = getStringField(parent, "struct_type");
         if (structType != null) {
             Map<String, JsonObject> composed = getAllFunctionsForType(structType);
@@ -425,8 +341,6 @@ public final class MoLangSchemaService {
         JsonElement el = obj.get(field);
         return el.isJsonPrimitive() ? el.getAsString() : null;
     }
-
-    // ── Resolution result ─────────────────────────────────────────────
 
     public record SchemaResolution(
             @Nullable JsonObject entry,

@@ -31,10 +31,8 @@ export class MoLangHoverProvider implements vscode.HoverProvider {
         const fullText = document.getText();
         const offset = document.offsetAt(position);
 
-        // Extract the full dot-chain at this position
         const chain = this.extractChainAt(fullText, offset);
         if (!chain) {
-            // Check keyword
             const wordRange = document.getWordRangeAtPosition(position);
             if (wordRange) {
                 const word = document.getText(wordRange);
@@ -52,13 +50,11 @@ export class MoLangHoverProvider implements vscode.HoverProvider {
         const dotPart = m[2];
         const parts = dotPart.substring(1).split('.');
 
-        // Infer runtime
         let runtimeName = this.schema.inferRuntimeFromContent(fullText);
         if (!runtimeName) {
             runtimeName = this.schema.inferRuntimeFromPath(document.uri.fsPath);
         }
 
-        // Handle math.xxx
         if (prefix === 'math') {
             if (parts.length >= 1) {
                 const mathFuncs = this.schema.getMathFunctions();
@@ -70,14 +66,12 @@ export class MoLangHoverProvider implements vscode.HoverProvider {
             return undefined;
         }
 
-        // Handle q.xxx.yyy
         if (prefix === 'q') {
             const resolved = this.schema.resolveFunction(runtimeName, parts);
             if (resolved) {
                 return new vscode.Hover(this.buildFunctionDoc('q.' + parts.join('.'), resolved));
             }
 
-            // Try as query variable
             if (parts.length === 1) {
                 const queryVars = this.schema.getQueryVariables(runtimeName);
                 const qv = queryVars[parts[0]];
@@ -140,7 +134,6 @@ export class MoLangHoverProvider implements vscode.HoverProvider {
             md.appendMarkdown('\n\n*Struct type: `' + func.struct_type + '`*');
         }
 
-        // Parameter details
         if (func.params && func.params.length > 0) {
             md.appendMarkdown('\n\n**Parameters:**\n');
             for (const p of func.params) {

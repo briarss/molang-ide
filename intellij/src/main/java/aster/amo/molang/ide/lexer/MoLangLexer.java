@@ -71,7 +71,6 @@ public class MoLangLexer extends LexerBase {
 
         char c = buffer.charAt(tokenStart);
 
-        // Whitespace
         if (Character.isWhitespace(c)) {
             tokenEnd = tokenStart + 1;
             while (tokenEnd < bufferEnd && Character.isWhitespace(buffer.charAt(tokenEnd))) {
@@ -81,7 +80,6 @@ public class MoLangLexer extends LexerBase {
             return;
         }
 
-        // Comments
         if (c == '/' && tokenStart + 1 < bufferEnd) {
             char next = buffer.charAt(tokenStart + 1);
             if (next == '/') {
@@ -108,7 +106,6 @@ public class MoLangLexer extends LexerBase {
             }
         }
 
-        // Strings (single-quoted)
         if (c == '\'') {
             tokenEnd = tokenStart + 1;
             while (tokenEnd < bufferEnd) {
@@ -127,7 +124,6 @@ public class MoLangLexer extends LexerBase {
             return;
         }
 
-        // Numbers
         if (Character.isDigit(c) || (c == '.' && tokenStart + 1 < bufferEnd && Character.isDigit(buffer.charAt(tokenStart + 1)))) {
             tokenEnd = tokenStart;
             if (c == '.') {
@@ -147,7 +143,6 @@ public class MoLangLexer extends LexerBase {
             return;
         }
 
-        // Identifiers, keywords, booleans, prefixes
         if (Character.isLetter(c) || c == '_') {
             tokenEnd = tokenStart + 1;
             while (tokenEnd < bufferEnd && isIdentChar(buffer.charAt(tokenEnd))) {
@@ -155,7 +150,6 @@ public class MoLangLexer extends LexerBase {
             }
             String word = buffer.subSequence(tokenStart, tokenEnd).toString();
 
-            // Check if followed by '.' for prefix detection
             boolean followedByDot = tokenEnd < bufferEnd && buffer.charAt(tokenEnd) == '.';
 
             if (followedByDot) {
@@ -180,7 +174,6 @@ public class MoLangLexer extends LexerBase {
             return;
         }
 
-        // Compound operators (two-char)
         if (tokenStart + 1 < bufferEnd) {
             char next = buffer.charAt(tokenStart + 1);
             String two = "" + c + next;
@@ -206,7 +199,6 @@ public class MoLangLexer extends LexerBase {
             }
         }
 
-        // Single-char tokens
         switch (c) {
             case '.':
                 tokenEnd = tokenStart + 1;
@@ -266,7 +258,6 @@ public class MoLangLexer extends LexerBase {
                 return;
         }
 
-        // Bad character
         tokenEnd = tokenStart + 1;
         tokenType = MoLangTokenTypes.BAD_CHARACTER;
     }

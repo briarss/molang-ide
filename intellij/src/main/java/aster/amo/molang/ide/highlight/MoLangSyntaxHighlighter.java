@@ -17,7 +17,6 @@ import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAtt
 
 public class MoLangSyntaxHighlighter extends SyntaxHighlighterBase {
 
-    // Text attribute keys
     public static final TextAttributesKey LINE_COMMENT =
             createTextAttributesKey("MOLANG_LINE_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT);
     public static final TextAttributesKey BLOCK_COMMENT =

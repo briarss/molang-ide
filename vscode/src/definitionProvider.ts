@@ -12,11 +12,9 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
     ): Promise<vscode.Definition | undefined> {
         const lineText = document.lineAt(position).text;
 
-        // Check for f.xxx() call — find the fn('xxx', ...) definition
         const fnResult = await this.tryFunctionDefinition(document, position, lineText);
         if (fnResult) return fnResult;
 
-        // Check for import('namespace:path') — resolve to file
         const importResult = await this.tryImportDefinition(position, lineText);
         if (importResult) return importResult;
 
@@ -28,7 +26,6 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
         position: vscode.Position,
         lineText: string
     ): Promise<vscode.Location[] | undefined> {
-        // Find f.xxx pattern around cursor
         const wordRange = document.getWordRangeAtPosition(position, /(?:f|function)\.([a-zA-Z_][a-zA-Z0-9_]*)/);
         if (!wordRange) return undefined;
 
@@ -38,14 +35,11 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
 
         const fnName = m[1];
 
-        // Search for fn('fnName', ...) definitions in workspace
         const locations: vscode.Location[] = [];
 
-        // Search current document first
         const docLocations = this.findFnDefinitionsInDocument(document, fnName);
         locations.push(...docLocations);
 
-        // Search workspace .molang files
         const files = await vscode.workspace.findFiles('**/*.molang', '**/node_modules/**', 50);
         for (const uri of files) {
             if (uri.toString() === document.uri.toString()) continue;
@@ -54,7 +48,6 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
                 const locs = this.findFnDefinitionsInDocument(doc, fnName);
                 locations.push(...locs);
             } catch {
-                // skip unreadable files
             }
         }
 
@@ -77,7 +70,6 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
         position: vscode.Position,
         lineText: string
     ): Promise<vscode.Location | undefined> {
-        // Check if cursor is inside an import('...')
         const m = IMPORT_PATTERN.exec(lineText);
         if (!m) return undefined;
 
@@ -85,14 +77,13 @@ export class MoLangDefinitionProvider implements vscode.DefinitionProvider {
         const importEnd = importStart + m[0].length;
         if (position.character < importStart || position.character > importEnd) return undefined;
 
-        const importPath = m[1]; // e.g. "namespace:path"
+        const importPath = m[1];
         const colonIdx = importPath.indexOf(':');
         if (colonIdx < 0) return undefined;
 
         const namespace = importPath.substring(0, colonIdx);
         const path = importPath.substring(colonIdx + 1);
 
-        // Resolve to data/{namespace}/molang/{path}.molang
         const glob = `**/data/${namespace}/molang/${path}.molang`;
         const files = await vscode.workspace.findFiles(glob, '**/node_modules/**', 1);
         if (files.length > 0) {

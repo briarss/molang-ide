@@ -60,7 +60,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
                         int offset = parameters.getOffset();
                         String textBefore = getTextBefore(doc, offset);
 
-                        // Detect runtime context: content annotation first, file path fallback
                         String docText = doc.getText();
                         String runtimeName = schema.inferRuntimeFromContent(docText);
                         if (runtimeName == null) {
@@ -68,7 +67,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
                             runtimeName = vFile != null ? schema.inferRuntimeFromPath(vFile.getPath()) : null;
                         }
 
-                        // Try // @context annotation completion
                         Matcher ctxMatcher = CONTEXT_ANNOTATION_PATTERN.matcher(textBefore);
                         if (ctxMatcher.find()) {
                             for (String name : schema.getRuntimeNames()) {
@@ -83,21 +81,19 @@ public class MoLangCompletionContributor extends CompletionContributor {
                             return;
                         }
 
-                        // Try prefix chain completion (q.pokemon. or math. etc.)
                         Matcher chainMatcher = PREFIX_CHAIN_PATTERN.matcher(textBefore);
                         if (chainMatcher.find()) {
                             String prefix = normalizePrefix(chainMatcher.group(1));
                             String chainStr = chainMatcher.group(2);
                             String[] chain = chainStr.isEmpty()
                                     ? new String[0]
-                                    : chainStr.substring(1).split("\\."); // skip leading dot
+                                    : chainStr.substring(1).split("\\.");
 
                             handleChainCompletion(schema, result, prefix, chain, runtimeName, doc, offset);
                             result.stopHere();
                             return;
                         }
 
-                        // Try bare identifier completion (keywords, top-level)
                         Matcher bareMatcher = BARE_IDENT_PATTERN.matcher(textBefore);
                         if (bareMatcher.find()) {
                             String partial = bareMatcher.group(1);
@@ -130,7 +126,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
                                        String[] chain,
                                        @Nullable String runtimeName) {
         if (chain.length == 0) {
-            // q. → show top-level query variables
             Map<String, JsonObject> queryVars = schema.getQueryVariables(runtimeName);
             for (var entry : queryVars.entrySet()) {
                 String name = entry.getKey();
@@ -149,12 +144,10 @@ public class MoLangCompletionContributor extends CompletionContributor {
                 result.addElement(prioritize(builder, "Struct".equals(type) ? 200 : 100));
             }
 
-            // Also add general functions
             addFunctionMapToResult(schema.getGeneralFunctions(), result, 50);
             return;
         }
 
-        // q.pokemon. → resolve chain
         resolveAndAddCompletions(schema, result, runtimeName, chain);
     }
 
@@ -165,11 +158,9 @@ public class MoLangCompletionContributor extends CompletionContributor {
             Map<String, JsonObject> mathFuncs = schema.getMathFunctions();
             addFunctionMapToResult(mathFuncs, result, 100);
         }
-        // math doesn't have deep nesting
     }
 
     private void handleTempCompletion(CompletionResultSet result, Document doc) {
-        // Scan document for t.xxx or temp.xxx usage
         Set<String> names = scanPrefixUsages(doc.getText(), "t", "temp");
         for (String name : names) {
             result.addElement(prioritize(
@@ -182,7 +173,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
     }
 
     private void handleVariableCompletion(CompletionResultSet result, Document doc) {
-        // Scan document for v.xxx or variable.xxx usage
         Set<String> names = scanPrefixUsages(doc.getText(), "v", "variable");
         for (String name : names) {
             result.addElement(prioritize(
@@ -195,7 +185,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
     }
 
     private void handleFunctionCompletion(CompletionResultSet result, Document doc) {
-        // Scan document for fn('name', ...) definitions
         Set<String> fnNames = scanFnDefinitions(doc.getText());
         for (String name : fnNames) {
             result.addElement(prioritize(
@@ -214,7 +203,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
     private void handleContextCompletion(MoLangSchemaService schema,
                                          CompletionResultSet result,
                                          @Nullable String runtimeName) {
-        // Context variables come from the runtime
         if (runtimeName != null) {
             Map<String, JsonObject> queryVars = schema.getRuntimeQueryVariables(runtimeName);
             for (var entry : queryVars.entrySet()) {
@@ -250,7 +238,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
             String source = getStringField(func, "source");
             String returnType = returns != null ? returns : (type != null ? type : "");
 
-            // Build parameter signature
             String paramSig = buildParamSignature(func);
             boolean hasParams = !paramSig.isEmpty();
 
@@ -280,7 +267,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
                     200
             ));
         }
-        // Also suggest prefix starts
         for (String prefix : List.of("q", "v", "t", "f", "c", "math")) {
             result.addElement(prioritize(
                     LookupElementBuilder.create(prefix)
@@ -294,8 +280,6 @@ public class MoLangCompletionContributor extends CompletionContributor {
             ));
         }
     }
-
-    // ── Helpers ──────────────────────────────────────────────────────
 
     private static String getTextBefore(Document doc, int offset) {
         int lineNum = doc.getLineNumber(offset);

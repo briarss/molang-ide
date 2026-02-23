@@ -1,8 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-// ── Types ────────────────────────────────────────────────────────────
-
 export interface SchemaFunction {
     type?: string;
     returns?: string;
@@ -54,8 +52,6 @@ export interface SchemaResolution {
     functions: Record<string, SchemaFunction>;
 }
 
-// ── Schema Service ───────────────────────────────────────────────────
-
 export class MoLangSchemaService {
     private root: SchemaRoot = {};
     private structs: Record<string, SchemaStruct> = {};
@@ -84,8 +80,6 @@ export class MoLangSchemaService {
         return this.loaded;
     }
 
-    // ── Runtime contexts ─────────────────────────────────────────────
-
     getRuntimeNames(): string[] {
         return Object.keys(this.runtimes);
     }
@@ -100,9 +94,6 @@ export class MoLangSchemaService {
         return runtime.query;
     }
 
-    /**
-     * Infer runtime context from `// @context event:XXX` annotation in first 10 lines.
-     */
     inferRuntimeFromContent(text: string): string | null {
         const lines = text.split('\n', 12);
         const limit = Math.min(lines.length, 10);
@@ -119,13 +110,9 @@ export class MoLangSchemaService {
         return null;
     }
 
-    /**
-     * Infer runtime context from file path patterns.
-     */
     inferRuntimeFromPath(filePath: string): string | null {
         const normalized = filePath.replace(/\\/g, '/').toLowerCase();
 
-        // Try callbacks/event_name/ or molang/event_name/ pattern
         for (const prefix of ['callbacks/', 'molang/']) {
             const idx = normalized.indexOf(prefix);
             if (idx >= 0) {
@@ -141,7 +128,6 @@ export class MoLangSchemaService {
             }
         }
 
-        // Fuzzy match against runtime names
         for (const runtimeName of Object.keys(this.runtimes)) {
             const lower = runtimeName.replace('event:', '').toLowerCase().replace(/_/g, '');
             if (normalized.includes(lower)) {
@@ -151,8 +137,6 @@ export class MoLangSchemaService {
 
         return null;
     }
-
-    // ── Structs ──────────────────────────────────────────────────────
 
     getStructNames(): string[] {
         return Object.keys(this.structs);
@@ -164,23 +148,17 @@ export class MoLangSchemaService {
         return s.functions;
     }
 
-    // ── Struct compositions ──────────────────────────────────────────
-
     getCompositionRegistries(structType: string): string[] {
         const comp = this.structCompositions[structType];
         if (!comp?.registries) return [];
         return comp.registries;
     }
 
-    // ── Function sets ────────────────────────────────────────────────
-
     getFunctionSetFunctions(setName: string): Record<string, SchemaFunction> {
         const set = this.functionSets[setName];
         if (!set?.functions) return {};
         return set.functions;
     }
-
-    // ── Chain resolution ─────────────────────────────────────────────
 
     resolveChain(runtimeName: string | null, chain: string[]): SchemaResolution | null {
         if (!chain || chain.length === 0) return null;
@@ -191,7 +169,6 @@ export class MoLangSchemaService {
         let currentStructType: string | null = null;
         let currentFunctions: Record<string, SchemaFunction> | null = null;
 
-        // Resolve first element
         const first = chain[0];
         if (first in queryVars) {
             current = queryVars[first];
@@ -202,7 +179,6 @@ export class MoLangSchemaService {
             return null;
         }
 
-        // Walk remaining chain elements
         for (let i = 1; i < chain.length; i++) {
             let funcs: Record<string, SchemaFunction>;
             if (currentFunctions) {
@@ -229,7 +205,6 @@ export class MoLangSchemaService {
             }
         }
 
-        // Return functions available at this point
         let availableFunctions: Record<string, SchemaFunction>;
         if (currentFunctions) {
             availableFunctions = currentFunctions;
@@ -241,9 +216,6 @@ export class MoLangSchemaService {
         return { entry: current, functions: availableFunctions };
     }
 
-    /**
-     * Resolve a single function entry by full chain (for documentation lookup).
-     */
     resolveFunction(runtimeName: string | null, chain: string[]): SchemaFunction | null {
         if (!chain || chain.length === 0) return null;
 
@@ -264,35 +236,26 @@ export class MoLangSchemaService {
         return res.functions[last] ?? null;
     }
 
-    // ── Math functions ───────────────────────────────────────────────
-
     getMathFunctions(): Record<string, SchemaFunction> {
         return this.getStructFunctions('math');
     }
 
-    // ── General functions ────────────────────────────────────────────
-
     getGeneralFunctions(): Record<string, SchemaFunction> {
         return this.getFunctionSetFunctions('generalFunctions');
     }
-
-    // ── Helpers ──────────────────────────────────────────────────────
 
     getAllFunctionsForType(structType: string | null): Record<string, SchemaFunction> {
         if (!structType) return {};
 
         const result: Record<string, SchemaFunction> = {};
 
-        // Direct struct functions
         Object.assign(result, this.getStructFunctions(structType));
 
-        // Composed function set functions
         const registries = this.getCompositionRegistries(structType);
         for (const registry of registries) {
             Object.assign(result, this.getFunctionSetFunctions(registry));
         }
 
-        // Custom functions from composition
         const comp = this.structCompositions[structType];
         if (comp?.custom_functions) {
             Object.assign(result, comp.custom_functions);
@@ -305,7 +268,6 @@ export class MoLangSchemaService {
         if (runtimeName) {
             return this.getRuntimeQueryVariables(runtimeName);
         }
-        // Merge from all runtimes for broad completions
         const merged: Record<string, SchemaFunction> = {};
         for (const key of Object.keys(this.runtimes)) {
             Object.assign(merged, this.getRuntimeQueryVariables(key));
@@ -320,7 +282,6 @@ export class MoLangSchemaService {
             Object.assign(result, parent.functions);
         }
 
-        // Also include composed functions if struct_type is set
         if (parent.struct_type) {
             const composed = this.getAllFunctionsForType(parent.struct_type);
             for (const [key, value] of Object.entries(composed)) {

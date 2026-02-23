@@ -7,7 +7,6 @@ import { MoLangDefinitionProvider } from './definitionProvider';
 const MOLANG_SELECTOR: vscode.DocumentSelector = { language: 'molang', scheme: 'file' };
 
 export function activate(context: vscode.ExtensionContext) {
-    // Definition provider works without schema (text scanning only)
     context.subscriptions.push(
         vscode.languages.registerDefinitionProvider(
             MOLANG_SELECTOR,
@@ -23,7 +22,6 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    // Schema-dependent providers
     context.subscriptions.push(
         vscode.languages.registerCompletionItemProvider(
             MOLANG_SELECTOR,

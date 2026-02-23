@@ -18,14 +18,12 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
         const lineText = document.lineAt(position).text;
         const textBefore = lineText.substring(0, position.character);
 
-        // Detect runtime context
         const docText = document.getText();
         let runtimeName = this.schema.inferRuntimeFromContent(docText);
         if (!runtimeName) {
             runtimeName = this.schema.inferRuntimeFromPath(document.uri.fsPath);
         }
 
-        // Try // @context annotation completion
         const ctxMatch = CONTEXT_ANNOTATION_PATTERN.exec(textBefore);
         if (ctxMatch) {
             return this.schema.getRuntimeNames().map(name => {
@@ -36,7 +34,6 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
             });
         }
 
-        // Try prefix chain completion
         const chainMatch = PREFIX_CHAIN_PATTERN.exec(textBefore);
         if (chainMatch) {
             const prefix = normalizePrefix(chainMatch[1]);
@@ -45,7 +42,6 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
             return this.handleChainCompletion(prefix, chain, runtimeName, document);
         }
 
-        // Bare identifier completion (keywords + prefixes)
         return this.handleBareCompletion();
     }
 
@@ -73,14 +69,12 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
             for (const [name, obj] of Object.entries(queryVars)) {
                 items.push(this.makeFunctionItem(name, obj, obj.type === 'Struct' ? '0' : '1'));
             }
-            // Add general functions
             for (const [name, obj] of Object.entries(this.schema.getGeneralFunctions())) {
                 items.push(this.makeFunctionItem(name, obj, '2'));
             }
             return items;
         }
 
-        // Resolve chain
         return this.resolveAndGetItems(runtimeName, chain);
     }
 
@@ -154,7 +148,6 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
             item.detail += ` (${func.struct_type})`;
         }
 
-        // Build documentation
         const md = new vscode.MarkdownString();
         const paramSig = buildParamSignature(func);
         if (paramSig) {
@@ -166,7 +159,6 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
         if (func.source) md.appendText('\n\n*Source: ' + func.source + '*');
         item.documentation = md;
 
-        // Insert with snippet for params
         if (func.params && func.params.length > 0) {
             const snippetParams = func.params.map((p, i) =>
                 `\${${i + 1}:${p.name ?? 'arg' + (i + 1)}}`
@@ -198,8 +190,6 @@ export class MoLangCompletionProvider implements vscode.CompletionItemProvider {
         return items;
     }
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────
 
 function normalizePrefix(raw: string): string {
     switch (raw) {

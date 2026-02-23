@@ -43,7 +43,6 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         MoLangSchemaService schema = project.getService(MoLangSchemaService.class);
         if (schema == null || !schema.isLoaded()) return null;
 
-        // Get the text around the element to find the full chain
         String elementText = originalElement.getText();
         Document doc = file.getViewProvider().getDocument();
         if (doc == null) return null;
@@ -51,17 +50,14 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         int offset = originalElement.getTextOffset();
         String fullText = doc.getText();
 
-        // Extract the full dot-chain containing this element
         String chain = extractChainAt(fullText, offset);
         if (chain == null) {
-            // Check if it's a keyword
             if (KEYWORD_SET.contains(elementText)) {
                 return generateKeywordDoc(elementText);
             }
             return null;
         }
 
-        // Parse the chain
         Matcher m = CHAIN_PATTERN.matcher(chain);
         if (!m.matches()) return null;
 
@@ -69,14 +65,12 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         String dotPart = m.group(2);
         String[] parts = dotPart.substring(1).split("\\.");
 
-        // Infer runtime: content annotation first, file path fallback
         String runtimeName = schema.inferRuntimeFromContent(fullText);
         if (runtimeName == null) {
             VirtualFile vFile = file.getVirtualFile();
             runtimeName = vFile != null ? schema.inferRuntimeFromPath(vFile.getPath()) : null;
         }
 
-        // Handle math.xxx
         if ("math".equals(prefix)) {
             if (parts.length >= 1) {
                 Map<String, JsonObject> mathFuncs = schema.getMathFunctions();
@@ -88,15 +82,12 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
             return null;
         }
 
-        // Handle q.xxx.yyy...
         if ("q".equals(prefix)) {
-            // Resolve the full chain
             JsonObject resolved = schema.resolveFunction(runtimeName, parts);
             if (resolved != null) {
                 return generateFunctionDoc("q." + String.join(".", parts), resolved);
             }
 
-            // Try as a query variable itself
             if (parts.length == 1) {
                 Map<String, JsonObject> queryVars = schema.getQueryVariables(runtimeName);
                 JsonObject qv = queryVars.get(parts[0]);
@@ -111,20 +102,15 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
 
     @Override
     public @Nullable String getQuickNavigateInfo(PsiElement element, PsiElement originalElement) {
-        // Show a brief one-line summary on Ctrl+hover
         String doc = generateDoc(element, originalElement);
         if (doc == null) return null;
-        // Strip HTML for quick navigate
         return doc.replaceAll("<[^>]+>", "").replaceAll("\\s+", " ").trim();
     }
-
-    // ── Doc generation ──────────────────────────────────────────────
 
     private String generateFunctionDoc(String fullName, JsonObject func) {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><body>");
 
-        // Signature
         String type = getStringField(func, "type");
         String returns = getStringField(func, "returns");
         String returnType = returns != null ? returns : (type != null ? type : "Unknown");
@@ -132,7 +118,6 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         sb.append("<b><code>");
         sb.append(escapeHtml(fullName));
 
-        // Parameters
         String paramSig = buildParamSignature(func);
         if (!paramSig.isEmpty()) {
             sb.append("(").append(escapeHtml(paramSig)).append(")");
@@ -141,25 +126,21 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         sb.append(" → ").append(escapeHtml(returnType));
         sb.append("</code></b>");
 
-        // Description
         String desc = getStringField(func, "description");
         if (desc != null) {
             sb.append("<br/><br/>").append(escapeHtml(desc));
         }
 
-        // Source
         String source = getStringField(func, "source");
         if (source != null) {
             sb.append("<br/><br/><i>Source: ").append(escapeHtml(source)).append("</i>");
         }
 
-        // Struct type hint
         String structType = getStringField(func, "struct_type");
         if (structType != null) {
             sb.append("<br/><i>Struct type: ").append(escapeHtml(structType)).append("</i>");
         }
 
-        // Parameter details
         if (func.has("params") && func.get("params").isJsonArray()) {
             JsonArray params = func.getAsJsonArray("params");
             if (!params.isEmpty()) {
@@ -205,11 +186,8 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         return "<html><body>" + desc + "</body></html>";
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────
-
     @Nullable
     private String extractChainAt(String text, int offset) {
-        // Walk backwards to find the start of the chain
         int start = offset;
         while (start > 0) {
             char c = text.charAt(start - 1);
@@ -220,7 +198,6 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
             }
         }
 
-        // Walk forwards to find the end
         int end = offset;
         while (end < text.length()) {
             char c = text.charAt(end);
@@ -234,7 +211,6 @@ public class MoLangDocumentationProvider extends AbstractDocumentationProvider {
         if (start >= end) return null;
         String chain = text.substring(start, end);
 
-        // Must contain a dot and start with a known prefix
         if (!chain.contains(".")) return null;
         return chain;
     }
