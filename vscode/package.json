@@ -1,0 +1,97 @@
+{
+  "name": "molang",
+  "displayName": "MoLang",
+  "description": "Syntax highlighting, completions, hover docs, and go-to-definition for MoLang (Bedrock/Cobblemon expression language)",
+  "version": "2.0.0",
+  "publisher": "bedrockk",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:molang"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/vscode": "^1.75.0",
+    "@types/node": "^20.0.0",
+    "@vscode/vsce": "^3.0.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "molang",
+        "aliases": ["MoLang", "molang"],
+        "extensions": [".molang"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "molang",
+        "scopeName": "source.molang",
+        "path": "./syntaxes/molang.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "molang",
+        "path": "./snippets/molang.json"
+      }
+    ],
+    "configurationDefaults": {
+      "editor.tokenColorCustomizations": {
+        "textMateRules": [
+          {
+            "scope": "support.class.query.molang, support.class.math.molang",
+            "settings": { "foreground": "#4EC9B0" }
+          },
+          {
+            "scope": "support.function.query.molang, support.function.math.molang",
+            "settings": { "foreground": "#DCDCAA" }
+          },
+          {
+            "scope": "storage.type.variable.molang",
+            "settings": { "foreground": "#569CD6" }
+          },
+          {
+            "scope": "support.type.property-name.variable.molang",
+            "settings": { "foreground": "#9CDCFE" }
+          },
+          {
+            "scope": "storage.type.temp.molang",
+            "settings": { "foreground": "#C586C0" }
+          },
+          {
+            "scope": "support.type.property-name.temp.molang",
+            "settings": { "foreground": "#CE9178" }
+          },
+          {
+            "scope": "support.class.context.molang",
+            "settings": { "foreground": "#4EC9B0" }
+          },
+          {
+            "scope": "support.type.property-name.context.molang",
+            "settings": { "foreground": "#D4D4D4", "fontStyle": "italic" }
+          },
+          {
+            "scope": "support.class.array.molang",
+            "settings": { "foreground": "#4EC9B0" }
+          },
+          {
+            "scope": "support.type.property-name.array.molang",
+            "settings": { "foreground": "#B5CEA8" }
+          }
+        ]
+      }
+    }
+  }
+}

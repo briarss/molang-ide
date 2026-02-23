@@ -1,0 +1,11 @@
+# IntelliJ
+intellij/build/
+intellij/.gradle/
+intellij/.idea/
+intellij/*.iml
+
+# VSCode
+vscode/node_modules/
+vscode/out/
+vscode/*.vsix
+vscode/.vscode/

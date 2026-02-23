@@ -1,0 +1,96 @@
+{
+  "name": "MoLang",
+  "scopeName": "source.molang",
+  "fileTypes": ["molang"],
+  "patterns": [
+    {
+      "name": "comment.line.double-slash.molang",
+      "match": "//.*$"
+    },
+    {
+      "name": "comment.block.molang",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "string.quoted.single.molang",
+      "begin": "'",
+      "end": "'"
+    },
+    {
+      "name": "constant.numeric.molang",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    {
+      "name": "constant.language.molang",
+      "match": "\\b(true|false)\\b"
+    },
+    {
+      "name": "keyword.control.molang",
+      "match": "\\b(return|break|continue|loop|for_each|if|else|switch|while|fn|struct|import|this)\\b"
+    },
+    {
+      "match": "\\b(math)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "support.class.math.molang" },
+        "2": { "name": "support.function.math.molang" }
+      }
+    },
+    {
+      "match": "\\b(query|q)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "support.class.query.molang" },
+        "2": { "name": "support.function.query.molang" }
+      }
+    },
+    {
+      "match": "\\b(variable|v)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "storage.type.variable.molang" },
+        "2": { "name": "support.type.property-name.variable.molang" }
+      }
+    },
+    {
+      "match": "\\b(temp|t)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "storage.type.temp.molang" },
+        "2": { "name": "support.type.property-name.temp.molang" }
+      }
+    },
+    {
+      "match": "\\b(context|c)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "support.class.context.molang" },
+        "2": { "name": "support.type.property-name.context.molang" }
+      }
+    },
+    {
+      "match": "\\b(function|f)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "storage.type.function.molang" },
+        "2": { "name": "entity.name.function.molang" }
+      }
+    },
+    {
+      "match": "\\b(array)\\.([a-zA-Z_][a-zA-Z0-9_.]*)",
+      "captures": {
+        "1": { "name": "support.class.array.molang" },
+        "2": { "name": "support.type.property-name.array.molang" }
+      }
+    },
+    {
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()",
+      "captures": {
+        "1": { "name": "entity.name.function.molang" }
+      }
+    },
+    {
+      "name": "keyword.operator.molang",
+      "match": "->|\\?\\?|==|!=|>=|<=|&&|\\|\\||\\+=|-=|\\*=|/=|[+\\-*/<>=!?:]"
+    },
+    {
+      "name": "punctuation.separator.molang",
+      "match": "[;,]"
+    }
+  ]
+}
